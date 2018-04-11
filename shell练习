@@ -1,0 +1,121 @@
+shell练习：
+
+1.一键部署软件脚本（nginx的安装）：
+vim test.sh
+
+#!/bin/bash
+#测试yum源是否可用
+repo=`yum repolist | awk '/repolist/{print $2}' |sed 's/,//'`
+if [ $repo -eq 0 ]; then
+     echo "yum源不可用"
+     exit
+fi 
+
+#安装nginx依赖包
+yum -y install gcc openssl-devel pcre-devel >>/var/log/nginx.log
+
+#自动部署nginx软件
+tar -xf nginx-1.8.0.tar.gz
+cd nginx-1.8.0
+./configure  2>> /var/log/nginx.log
+make && make install   2>> /var/log/nginx.log
+
+
+
+2.写nginx的启动脚本
+能开，关，重启，查看状态
+
+vim /usr/bin/mynginx
+#!/bin/bash
+pid=/usr/local/nginx/logs/nginx.pid
+case $1 in
+start)
+    if [ -f $pid ]; then
+        echo "该服务已经启用"
+        exit
+    else
+        /usr/local/nginx/sbin/nginx
+    fi;;
+stop)
+    if [ ! -f $pid ]; then
+        echo "该服务已停用"
+    else
+        /usr/local/nginx/sbin/nginx -s stop
+    fi;;
+restart)
+    /usr/local/nginx/sbin/nginx -s stop
+    /usr/local/nginx/sbin/nginx;;
+reload)
+    /usr/local/nginx/sbin/nginx -s reload;;
+status)
+    if [ -f $pid ]; then
+        echo "nginx is running"
+    else
+        echo "nginx is down"
+    fi;;
+*)
+    echo "Usage:nginx [start|stop|restart|reload|status]";;
+esac
+
+
+
+
+3.分布式存储脚本:
+    mkdir    /{1,2,3}
+
+vim test.sh
+#!/bin/bash
+case $1 in
+-w)
+        dir=$[RANDOM%3+1]
+        echo "$2  $dir"  >> /root/log
+        cp -r $2  /$dir;;
+-r)
+        dir=`grep $2 log | awk '{print $2}'`
+        cat /$dir/$2;;
+*)
+        echo "语法错误"
+esac
+
+
+
+
+4.检查有没有人try我的密码：
+ awk '/Failed/{print $11}' /var/log/secure | sed '/"被中断的系统调用"/d' > log1
+ awk '{IP[$1]++} END {for(i in IP){print IP[i],i}}' log1 > log2
+ awk '$1>=2{print $2}' log2 > log3
+for i in `cat log3`
+do
+     firewall-cmd --permanent --zone=block --add-source=$i
+     firewall-cmd --reload
+done
+
+
+
+
+5.进度显示脚本：
+abc(){
+while :
+do
+echo -n "."
+sleep 0.2
+done
+}
+abc &
+
+cp -r $1 $2
+kill $!                         //$$当前进程的进程号，$!返回最后一个进程号(pid)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
